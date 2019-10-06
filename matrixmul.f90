@@ -3,8 +3,8 @@ program matrixmul
   integer i,j,k
   real :: temp
   real :: start, finish
-  real, dimension (2000,2000) ::  a, b, c,d
-  N=2000
+  real, dimension (100,100) ::  a, b, c,d
+  N=100
   print*,"Matrix size is:",N
   
 ! populate the array using random [0,1] values
@@ -19,13 +19,11 @@ program matrixmul
   print*,"Starting..."
 ! D^T_{i,j}=\sum_k B^T_{i,k} A^T_{k,j}=\sum_k B_{k,i} A_{j,k}
   call cpu_time(start)
-  do j=1,N
-     do i=1,N
-        temp = 0
+  do i=1,N
+     do j=1,N
         do k=1,N
-           temp = temp + a(j,k)*b(k,i)
+           d(i,k) = d(i,k) + a(i,j)*b(j,k)
         end do
-        d(j,i)=temp
      end do
   end do
   call cpu_time(finish)
@@ -34,11 +32,9 @@ program matrixmul
   call cpu_time(start)
   do i=1,N
      do j=1,N
-        temp = 0
         do k=1,N
-           temp=temp+a(i,k)*b(k,j)
+           c(i,j)=c(i,j)+a(i,k)*b(k,j)
         end do
-        c(i,j)=temp
      end do
   end do
   call cpu_time(finish)
