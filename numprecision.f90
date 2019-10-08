@@ -11,9 +11,9 @@ program numprecision
   f  = 1.41421356237E21
   g = 3.14159265359E32
   h  = 1.41421356237E21
-  print*,"Summing 2.000.000 and 1 as integer2",a+b
-  print*,"Summing 2.000.000 and 1 as integer4",c+d
-  print*,"Summing pi*10^32 and sqrt(2)*10^21 as real4",e+f
-  print*,"Summing pi*10^32 and sqrt(2)*10^21 as real8",g+h
+  print*,"Summing 2.000.000 and 1 using integer2",a+b
+  print*,"Summing 2.000.000 and 1 using integer4",c+d
+  print*,"Summing pi*10^32 and sqrt(2)*10^21 using real4",e+f
+  print*,"Summing pi*10^32 and sqrt(2)*10^21 using real8",g+h
   stop
   end program

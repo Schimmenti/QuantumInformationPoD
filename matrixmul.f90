@@ -3,10 +3,16 @@ program matrixmul
   integer i,j,k
   real :: temp
   real :: start, finish
-  real, dimension (100,100) ::  a, b, c,d
+  real, dimension (:,:), allocatable ::  a, b, c,d, e
   N=100
   print*,"Matrix size is:",N
-  
+! we allocate the matrices with the given size; this is done in order
+! to allow dynamic sizing for N scaling testing
+  allocate(a(N,N))
+  allocate(b(N,N))
+  allocate(c(N,N))
+  allocate(d(N,N))
+  allocate(e(N,N))
 ! populate the array using random [0,1] values
   do  j=1,N
      do i = 1,N
@@ -17,7 +23,7 @@ program matrixmul
      end do
   end do
   print*,"Starting..."
-! D^T_{i,j}=\sum_k B^T_{i,k} A^T_{k,j}=\sum_k B_{k,i} A_{j,k}
+  
   call cpu_time(start)
   do i=1,N
      do j=1,N
@@ -27,7 +33,7 @@ program matrixmul
      end do
   end do
   call cpu_time(finish)
-  print*, "Time elapsed for row-fast multiplication is ", finish-start
+  print*, "Time elapsed for row-slow multiplication is ", finish-start
   
   call cpu_time(start)
   do i=1,N
@@ -39,7 +45,8 @@ program matrixmul
   end do
   call cpu_time(finish)
   print*, "Time elapsed for column-fast multiplication is ", finish-start
-  do  j=1,N
+! checking whether the two resulting matrices are the same
+  do j=1,N
      do i = 1,N
         if (c(i,j) /= d(i,j)) then
            print*,"ERROR"
@@ -47,4 +54,14 @@ program matrixmul
         end if
      end do
   end do
+  call cpu_time(start)
+  e = matmul(a,b)
+  call cpu_time(finish)
+  print*, "Time elapsed for intrinsic multiplication is ", finish-start
+! goodbye
+  deallocate(a)
+  deallocate(b)
+  deallocate(c)
+  deallocate(d)
+  deallocate(e)
   end program
