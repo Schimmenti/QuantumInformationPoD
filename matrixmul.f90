@@ -1,67 +1,109 @@
-program matrixmul
-  integer N, stat
-  integer i,j,k
+module matrixutil
+implicit none
+integer :: ii,jj,kk
+
+contains
+
+! fills a NxN matrix with VAL
+function FILLMATF(N, VAL)result(x)
+	integer :: N
+	real :: VAL
+	real*4, dimension(N,N) :: x
+	do ii=0,N*N-1
+		x(mod(ii,N)+1,(ii/N)+1)=VAL
+	end do
+end function
+
+! fills a NxN matrix with random [0,1] values
+function RANDMATF(N)result(x)
+	integer :: N
+	real*4, dimension(N,N) :: x
+	do ii=0,N*N-1
+		x(mod(ii,N)+1,(ii/N)+1)=RAND(0)
+	end do
+end function
+
+! matrix multiplication - c(i,j) = \sum_k a(i,k)*b(k,j) - the index i runs slowest
+function IJKMULF(a, b, N)result(c)
+	INTEGER  :: N
+	REAL*4, DIMENSION(:,:) :: a, b
+	REAL*4, DIMENSION(N,N) :: c
+	do ii=1,N
+		do jj=1,N
+			do kk=1,N
+				c(ii,jj)=c(ii,jj) + a(ii,kk)*b(kk,jj)
+			end do
+		end do
+	end do
+end function IJKMULF
+
+! matrix multiplication - c(i,j) = \sum_k a(i,k)*b(k,j) - the index i runs fastest
+function KJIMULF(a, b, N)result(c)
+	INTEGER  :: N
+	REAL*4, DIMENSION(:,:) :: a, b
+	REAL*4, DIMENSION(N,N) :: c
+	do kk=1,N
+		do jj=1,N
+			do ii=1,N
+				c(ii,jj)=c(ii,jj) + a(ii,kk)*b(kk,jj)
+			end do
+		end do
+	end do
+end function KJIMULF
+
+end module
+
+
+program testmmul
+use matrixutil
+implicit none
+  integer nn, stat
+  character(10) :: nnchar
   real :: temp
   real :: start, finish
-  real, dimension (:,:), allocatable ::  a, b, c,d, e
-  N=100
-  print*,"Matrix size is:",N
+  real, dimension (:,:), allocatable :: matr1,matr2, res1, res2, res3
+  IF(COMMAND_ARGUMENT_COUNT() < 1)THEN
+!    Using default matrix size
+     nn = 100
+  ELSE
+      CALL GET_COMMAND_ARGUMENT(1, nnchar)
+      READ(nnchar,*)nn
+  ENDIF
 ! we allocate the matrices with the given size; this is done in order
-! to allow dynamic sizing for N scaling testing
-  allocate(a(N,N))
-  allocate(b(N,N))
-  allocate(c(N,N))
-  allocate(d(N,N))
-  allocate(e(N,N))
-! populate the array using random [0,1] values
-  do  j=1,N
-     do i = 1,N
-        a(i,j) = RAND(0)
-        b(i,j) = RAND(0)
-        c(i,j)=0
-        d(i,j)=0
-     end do
-  end do
-  print*,"Starting..."
-  
+! to allow dynamic sizing
+  allocate(matr1(nn,nn))
+  allocate(matr2(nn,nn))
+  allocate(res1(nn,nn))
+  allocate(res2(nn,nn))
+  allocate(res3(nn,nn))
+! populate the the two matrices using random [0,1] values
+! and the resulting ones using zeros
+  matr1 = RANDMATF(nn)
+  matr2 = RANDMATF(nn)
+  res1 = FILLMATF(nn,0e0)
+  res2 = FILLMATF(nn,0e0)
+  res3 = FILLMATF(nn,0e0)
+  start = 0
+  finish = 0
+! first method of multiplication
   call cpu_time(start)
-  do i=1,N
-     do j=1,N
-        do k=1,N
-           d(i,k) = d(i,k) + a(i,j)*b(j,k)
-        end do
-     end do
-  end do
+  res1 = IJKMULF(matr1, matr2, nn)
   call cpu_time(finish)
-  print*, "Time elapsed for row-slow multiplication is ", finish-start
-  
+  print*,finish-start
+! second method of multiplication
   call cpu_time(start)
-  do i=1,N
-     do j=1,N
-        do k=1,N
-           c(i,j)=c(i,j)+a(i,k)*b(k,j)
-        end do
-     end do
-  end do
+  res2 = KJIMULF(matr1, matr2, nn)
   call cpu_time(finish)
-  print*, "Time elapsed for column-fast multiplication is ", finish-start
-! checking whether the two resulting matrices are the same
-  do j=1,N
-     do i = 1,N
-        if (c(i,j) /= d(i,j)) then
-           print*,"ERROR"
-           stop
-        end if
-     end do
-  end do
+  print*,finish-start
+! intrinsic method of multiplication
   call cpu_time(start)
-  e = matmul(a,b)
+  res3 = matmul(matr1,matr2)
   call cpu_time(finish)
-  print*, "Time elapsed for intrinsic multiplication is ", finish-start
-! goodbye
-  deallocate(a)
-  deallocate(b)
-  deallocate(c)
-  deallocate(d)
-  deallocate(e)
+  print*,finish-start
+! deallocate all used matrices
+  deallocate(matr1)
+  deallocate(matr2)
+  deallocate(res1)
+  deallocate(res2)
+  deallocate(res3)
   end program
