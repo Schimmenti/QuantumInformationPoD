@@ -7,7 +7,7 @@ contains
 ! fills a NxN matrix with VAL
 function FILLMATF(N, VAL)result(x)
 	integer :: N
-	real :: VAL
+	real*4 :: VAL
 	real*4, dimension(N,N) :: x
 	do ii=0,N*N-1
 		x(mod(ii,N)+1,(ii/N)+1)=VAL
@@ -25,9 +25,9 @@ end function
 
 ! matrix multiplication - c(i,j) = \sum_k a(i,k)*b(k,j) - the index i runs slowest
 function IJKMULF(a, b, N)result(c)
-	INTEGER  :: N
-	REAL*4, DIMENSION(:,:) :: a, b
-	REAL*4, DIMENSION(N,N) :: c
+	integer  :: N
+	real*4, dimension(:,:) :: a, b
+	real*4, dimension(N,N) :: c
 	do ii=1,N
 		do jj=1,N
 			do kk=1,N
@@ -39,9 +39,9 @@ end function IJKMULF
 
 ! matrix multiplication - c(i,j) = \sum_k a(i,k)*b(k,j) - the index i runs fastest
 function KJIMULF(a, b, N)result(c)
-	INTEGER  :: N
-	REAL*4, DIMENSION(:,:) :: a, b
-	REAL*4, DIMENSION(N,N) :: c
+	integer  :: N
+	real*4, DIMENSION(:,:) :: a, b
+	real*4, DIMENSION(N,N) :: c
 	do kk=1,N
 		do jj=1,N
 			do ii=1,N
