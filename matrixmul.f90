@@ -54,7 +54,7 @@ end function KJIMULF
 end module
 
 
-program testmmul
+program matrixmul
 use matrixutil
 implicit none
   integer nn, stat
@@ -62,13 +62,13 @@ implicit none
   real :: temp
   real :: start, finish
   real, dimension (:,:), allocatable :: matr1,matr2, res1, res2, res3
-  IF(COMMAND_ARGUMENT_COUNT() < 1)THEN
+  if(COMMAND_ARGUMENT_COUNT() < 1)then
 !    Using default matrix size
      nn = 100
-  ELSE
-      CALL GET_COMMAND_ARGUMENT(1, nnchar)
-      READ(nnchar,*)nn
-  ENDIF
+  else
+      call GET_COMMAND_ARGUMENT(1, nnchar)
+      read(nnchar,*)nn
+  endif
 ! we allocate the matrices with the given size; this is done in order
 ! to allow dynamic sizing
   allocate(matr1(nn,nn))

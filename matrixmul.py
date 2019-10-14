@@ -1,12 +1,12 @@
 import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
+import os.path
 sizes = [1,5,10,20,50,100,200,500,750,1000]
 times = np.zeros((len(sizes),4))
-fName = 'a.out'
-
+fName = 'matrixmul'
 for i,sz in enumerate(sizes):
-	result = subprocess.run(['./'+fName,str(sz)], stdout=subprocess.PIPE)
+	result = subprocess.run(['./'+fName + '.x',str(sz)], stdout=subprocess.PIPE)
 	splits = result.stdout.decode('utf-8').lstrip().split('\n')
 	times[i,0]=int(sz)
 	times[i,1]=float(splits[0])
@@ -21,4 +21,5 @@ ax.plot(times[:,0], np.log(times[:,1]), label='Method 1')
 ax.plot(times[:,0], np.log(times[:,2]), label='Method 2')
 ax.plot(times[:,0], np.log(times[:,3]), label='Intrinsic')
 plt.legend()
+plt.savefig('matrixmul.png')
 plt.show()
