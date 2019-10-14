@@ -1,9 +1,9 @@
 program matrixvec
-  real, dimension(100,100) :: a
-  real, dimension(100) :: x,y
+  real, dimension(1000,1000) :: a
+  real, dimension(1000) :: x,y
   real :: start, finish
   integer :: i,j
-  N = 100
+  N = 1000
   do j=1,N
      do i=1,N
         a(i,j)=RAND(0)
