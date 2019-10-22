@@ -3,7 +3,16 @@
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{fancyhdr}
- 
+ \usepackage{xcolor}
+ \usepackage{lmodern}
+ \usepackage{listings}
+ \lstset{language=[90]Fortran,
+ 	basicstyle=\ttfamily,
+ 	keywordstyle=\color{blue},
+ 	commentstyle=\color{green},
+ 	morecomment=[l]{!\ }% Comment only with space after !
+ }
+
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{Vincenzo Maria Schimmenti - 1204565}

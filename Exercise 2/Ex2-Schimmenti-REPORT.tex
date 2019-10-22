@@ -3,6 +3,15 @@
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{lmodern}
+\usepackage{listings}
+\lstset{language=[90]Fortran,
+	basicstyle=\ttfamily,
+	keywordstyle=\color{blue},
+	commentstyle=\color{green},
+	morecomment=[l]{!\ }% Comment only with space after !
+}
  
 \pagestyle{fancy}
 \fancyhf{}
@@ -32,9 +41,9 @@ One can verify that:
 	\textrm{tr}(A)=\textrm{tr}^*(A^\dagger)
 \end{equation}
 \section*{Code Development}
-First, since the derived type is based on a double complex bidimensional array, we implemented the trace and adjoint functions for this type of variable and then extended to our type. In principle the adjoint operation is defined only for square matrices but can be generalized without any ambiguity to rectangular ones; one can not say the same for trace operation.
+First, since the derived type is based on a double complex bidimensional array, we implemented the trace and adjoint functions for this type of variable and then extended to our type. In principle the adjoint operation is defined only for square matrices but can be generalized without any ambiguity to rectangular ones; one can not say the same for trace operation. A crucial part of the code was deciding how to handle exceptions which in this case consist basically of negative or zero rows and columns sizes: one can either print an error message and close the program (using, for example, the \textit{STOP} directive) or return a \textit{null} output (which can be a zero for the trace or a zero by zero matrix in case of matrix initialization); we opted for the second solution.
 \section*{Results}
 We tested our implementation on a random generated matrix (which, along with the adjoint, we wrote inside two output files); we also validated our result on the basis of equation \ref{eqn:tradj}.
 \section*{Self Evaluation}
-The code written can be further improved by implementing a LU decomposition for our custom matrix in order to make possible the determinant computation in an efficient way.
+The code written can be further improved by implementing a LU decomposition for our custom matrix in order to make an efficient determinant computation. Our code, as it is, suffers from a problem which is the marix elements update: since we are storing the trace and the determinant as variable we are assuming (since no otherwise stated) that these two quantities will remain coherent with the matrix elements; in principle one can either change the matrix or this values and the subsequent computation will be wrong; to circumvent this problem one has to create a flag that signals whether a value has changed but this would imply a fully wrapped matrix (i.e. custom access and writing of matrix elements).  
 \end{document}
