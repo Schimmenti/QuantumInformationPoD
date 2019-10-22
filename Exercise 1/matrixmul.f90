@@ -106,7 +106,4 @@ implicit none
   deallocate(res1)
   deallocate(res2)
   deallocate(res3)
-  deallocate(res1)
-  deallocate(res2)
-  deallocate(res3)
   end program
