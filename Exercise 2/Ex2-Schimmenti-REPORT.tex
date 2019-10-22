@@ -1,0 +1,40 @@
+% !TeX spellcheck = en_US
+\documentclass{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+ 
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Vincenzo Maria Schimmenti - 1204565}
+\rhead{\today}
+\rfoot{Page \thepage}
+\lfoot{Exercise 2}
+\title{%
+	Information Theory and Computation \\
+	Exercise  2}
+\author{Vincenzo Maria Schimmenti - 1204565}
+\begin{document}
+\maketitle
+ 
+\section*{Theory}
+The exercise asked to implement a \textit{derived type} handling a double precision complex matrix with an arbitrary number of rows and columns and containing two variables for storing the trace and the determinant; also it is required to implement the adjoint and trace functions and operators. If we denoted the matrix elements as $A_{ij}$ (assuming $A$ is an $N \times N$ matrix) the adjoint is the matrix $A^\dagger$ for which:
+\begin{equation}
+	A^{\dagger}_{ij}=A^*_{ji}
+\end{equation}
+where the symbol $*$ denotes the complex conjugation. The trace is the scalar quantity:
+\begin{equation}
+	\textrm{tr}(A)=\sum_{i=1}^n A_{ii}
+\end{equation}
+One can verify that:
+\begin{equation}
+\label{eqn:tradj}
+	\textrm{tr}(A)=\textrm{tr}^*(A^\dagger)
+\end{equation}
+\section*{Code Development}
+First, since the derived type is based on a double complex bidimensional array, we implemented the trace and adjoint functions for this type of variable and then extended to our type. In principle the adjoint operation is defined only for square matrices but can be generalized without any ambiguity to rectangular ones; one can not say the same for trace operation.
+\section*{Results}
+We tested our implementation on a random generated matrix (which, along with the adjoint, we wrote inside two output files); we also validated our result on the basis of equation \ref{eqn:tradj}.
+\section*{Self Evaluation}
+The code written can be further improved by implementing a LU decomposition for our custom matrix in order to make possible the determinant computation in an efficient way.
+\end{document}

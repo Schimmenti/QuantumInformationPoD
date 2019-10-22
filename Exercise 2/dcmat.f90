@@ -1,75 +1,205 @@
-module dcmat
+MODULE MATPLUSMOD
+IMPLICIT NONE
+	TYPE MATPLUS
+! matrix dimensions: rows and columns
+		INTEGER*4, DIMENSION(2) :: SZ
+! actual matrix elements
+		COMPLEX*16, DIMENSION(:,:), ALLOCATABLE :: ELS
+! variables for storing the trace and the determinant
+! problem: if we modify the matrix elements these two are no longer valid
+		COMPLEX*16 :: MTRACE, MDET
+	END TYPE
+! interfaces for the adjoint, trace and determinant operations
+	INTERFACE OPERATOR(.ADJ.)
+		MODULE PROCEDURE ADJ_DCM,ADJ_MP
+	END INTERFACE
+	
+	INTERFACE OPERATOR(.TRACE.)
+		MODULE PROCEDURE TRACE_DCM,TRACE_MP
+	END INTERFACE
 
-implicit none
+	INTERFACE OPERATOR(.DET.)
+		MODULE PROCEDURE TRACE_DCM,DET_MP
+	END INTERFACE
+CONTAINS
+! create a MATPLUS full of zeros
+	FUNCTION INIT_MP(ROWS,COLS)
+		INTEGER*4, INTENT(IN) :: ROWS, COLS
+		TYPE(MATPLUS) :: INIT_MP
+		IF((ROWS>0).AND.(COLS>0))THEN
+			INIT_MP%SZ(1)=ROWS
+			INIT_MP%SZ(2)=COLS
+			ALLOCATE(INIT_MP%ELS(ROWS,COLS))
+			INIT_MP%MDET=0D0
+			INIT_MP%MTRACE=0D0
+			
+		ELSE
+			INIT_MP%SZ=0
+			ALLOCATE(INIT_MP%ELS(0,0))
+			INIT_MP%MDET = 0D0
+			INIT_MP%MTRACE = 0D0
+		END IF
+		INIT_MP%ELS=0d0
+		RETURN
+	END FUNCTION
+! create a MATPLUS filled with random numbers
+	FUNCTION INIT_RAND(ROWS,COLS)
+		INTEGER*4 :: ROWS, COLS
+		INTEGER*4 :: IINDEX
+		TYPE(MATPLUS) :: INIT_RAND
+		IF((ROWS>0).AND.(COLS>0))THEN
+			INIT_RAND%SZ(1)=ROWS
+			INIT_RAND%SZ(2)=COLS
+			ALLOCATE(INIT_RAND%ELS(ROWS,COLS))
+			DO IINDEX=0,ROWS*COLS-1
+				INIT_RAND%ELS(MOD(IINDEX,ROWS)+1, (IINDEX/ROWS)+1)=COMPLEX(RAND(0),RAND(0))
+			END DO
+		ELSE
+			INIT_RAND%SZ=0
+			ALLOCATE(INIT_RAND%ELS(0,0))
+			INIT_RAND%ELS=0d0
+			INIT_RAND%MDET = 0D0
+			INIT_RAND%MTRACE = 0D0
+		END IF
+		RETURN
+	END FUNCTION
+! adjoint operation for built-in double complex matrix
+! we ignore the fact that in principle the adjoint operation is supposed to be applied on square matrices
+! since it does not pose a treat (we can easily generalize, no ambiguity)
+	FUNCTION ADJ_DCM(MAT,SZ)
+		COMPLEX*16, DIMENSION(:,:), INTENT(IN) :: MAT
+		INTEGER*4, DIMENSION(2), INTENT(IN) :: SZ
+		COMPLEX*16, DIMENSION(:,:),ALLOCATABLE :: ADJ_DCM
+		ADJ_DCM = CONJG(TRANSPOSE(MAT))
+		RETURN
+	END FUNCTION
+! wrapper for our custom data type of adjoint operation above implemented
+	FUNCTION ADJ_MP(MAT)
+		TYPE(MATPLUS), INTENT(IN) :: MAT
+		TYPE(MATPLUS) :: ADJ_MP
+		ADJ_MP%SZ(1)=MAT%SZ(2)
+		ADJ_MP%SZ(2)=MAT%SZ(1)
+		ADJ_MP%ELS = ADJ_DCM(MAT%ELS, ADJ_MP%SZ)
+	END FUNCTION
+! trace operation for built-in double complex matrix
+	FUNCTION TRACE_DCM(MAT,SZ)
+		COMPLEX*16, DIMENSION(:,:), INTENT(IN) :: MAT
+		INTEGER*4, DIMENSION(2), INTENT(IN) :: SZ
+		COMPLEX*16 :: TRACE_DCM
+		INTEGER*4 :: IINDEX
+		IF(SZ(1).EQ.SZ(2))THEN
+			TRACE_DCM=0d0
+			DO IINDEX=1,SZ(1)
+				TRACE_DCM=TRACE_DCM+MAT(IINDEX,IINDEX)
+			END DO
+		ELSE
+			TRACE_DCM=0d0
+		END IF
+		RETURN
+	END FUNCTION
+! wrapper for our custom data type of trace operation above implemented
+	FUNCTION TRACE_MP(MAT)
+		TYPE(MATPLUS), INTENT(IN) :: MAT
+		COMPLEX*16 :: TRACE_MP
+		TRACE_MP=TRACE_DCM(MAT%ELS,MAT%SZ)
+	END FUNCTION
+! determinant operation for built-in double complex matrix
+! NOT YET IMPLEMENTED
+	FUNCTION DET_DCM(MAT,SZ)
+		COMPLEX*16, DIMENSION(:,:), INTENT(IN) :: MAT
+		INTEGER*4, DIMENSION(2), INTENT(IN) :: SZ
+		COMPLEX*16 :: DET_DCM
+		DET_DCM=0D0
+		RETURN
+	END FUNCTION
+! wrapper for our custom data type of determinant operation above implemented	
+	FUNCTION DET_MP(MAT)
+		TYPE(MATPLUS), INTENT(IN) :: MAT
+		COMPLEX*16 :: DET_MP
+		DET_MP=DET_DCM(MAT%ELS,MAT%SZ)
+	END FUNCTION
+! write a matrix into a file passed via argument FPTR
+	SUBROUTINE WRITE_DCM(FPTR,MAT,SZ)
+		COMPLEX*16, DIMENSION(:,:), INTENT(IN) :: MAT
+		INTEGER*4, DIMENSION(2), INTENT(IN) :: SZ
+		INTEGER*4 :: FPTR
+		INTEGER*4 :: RINDEX
+		DO RINDEX=1,SZ(1)
+			WRITE(FPTR,*)MAT(RINDEX,:)
+		END DO
+	END SUBROUTINE
 
-type dcmatrix
-integer, dimension(2) :: n
-double complex, dimension(:,:), allocatable :: els
-double complex :: mtrace
-double complex :: mdet
-end type dcmatrix
+	SUBROUTINE WRITE_MP(FPTR,MAT)
+		TYPE(MATPLUS), INTENT(IN) :: MAT
+		INTEGER*4 :: FPTR
+		CALL WRITE_DCM(FPTR,MAT%ELS, MAT%SZ)
+	END SUBROUTINE
+! LU decomposition for double complex matrices
+	SUBROUTINE LU_DCM(MAT,DIMN,LM,UM)
+		COMPLEX*16,DIMENSION(:,:),INTENT(IN) :: MAT
+		INTEGER*4, INTENT(IN) :: DIMN
+		COMPLEX*16,DIMENSION(:,:),ALLOCATABLE,INTENT(OUT) :: LM
+		COMPLEX*16,DIMENSION(:,:),ALLOCATABLE,INTENT(OUT) :: UM
+		INTEGER*4 :: ii,jj,kk
+		ALLOCATE(LM(DIMN,DIMN))
+		ALLOCATE(UM(DIMN,DIMN))
+		LM=0D0
+		UM=0D0
+		DO ii=1,DIMN
+			LM(ii,ii)=1d0
+		END DO
+		do jj=1,DIMN
+! U part: we find the jj-th column so we need to go from ii=1 to ii=jj
+			do ii=1,jj
+				UM(ii,jj)=MAT(ii,jj)
+				do kk=1,ii-1
+					UM(ii,jj)=UM(ii,jj)-LM(ii,kk)*UM(kk,jj)
+				end do
+			end do
+! L part: we find the (jj+1)-th row so we need to go from ii=1 to jj
+			if (jj<DIMN) then
+				do ii=1,jj
+					LM(jj+1,ii)=MAT(jj+1,ii)
+					do kk=1,ii-1
+						LM(jj+1,ii)=LM(jj+1,ii)-LM(jj+1,kk)*UM(kk,ii)
+					end do
+					LM(jj+1,ii)=LM(jj+1,ii)/UM(ii,ii)
+				end do
+			end if
+		end do
+	END SUBROUTINE
+	
+END MODULE
 
-interface operator (.adj.)
-	module procedure dcmatadjoint
-end interface
-
-interface operator (.trace.)
-	module procedure dcmattrace
-end interface
-
-
-contains
-
-function createmat(rows,cols)
-	integer, intent(in) :: rows, cols
-	type(dcmatrix) :: createmat
-	createmat%n(1)=rows
-	createmat%n(2)=cols
-	allocate(createmat%els(rows, cols))
-	return
-end function
-
-function createrndmat(rows,cols)
-	integer, intent(in) :: rows, cols
-	integer :: iindex
-	type(dcmatrix) :: createrndmat
-	createrndmat = createmat(rows, cols)
-	do iindex=0,rows*cols-1
-		createrndmat%els(mod(iindex,rows)+1, (iindex/rows)+1)=complex(RAND(0),RAND(0))
-	end do
-	return
-end function
-
-
-function dcmatadjoint(mat)result(matres)
-	type(dcmatrix), intent(in) :: mat
-	type(dcmatrix) :: matres
-	matres%n = mat%n
-	matres%els = conjg(transpose(mat%els))
-	return
-end function
-
-function dcmattrace(mat)result(res)
-	type(dcmatrix), intent(in) :: mat
-	double complex :: res
-	integer :: iindex
-! we use a safe implementation to avoid errors in non square matrices
-	integer :: maxindex
-	maxindex = min(mat%n(1), mat%n(2))
-	res = complex(0d0,0d0)
-	do iindex=1,maxindex
-		res = res + mat%els(iindex,iindex)
-	end do
-	return
-end function
-
-end module dcmat
-
-program dcmatest
-use dcmat
-type(dcmatrix) :: A
-
-A = createrndmat(10,10)
-
-print*,.trace.(A)
-end program
+PROGRAM MATPLUSTEST
+USE MATPLUSMOD
+TYPE(MATPLUS) :: TEST,RES
+INTEGER*4 :: ROWS,COLS
+INTEGER*4 :: II,JJ
+DOUBLE COMPLEX, DIMENSION(:,:), ALLOCATABLE :: X,LM,UM
+ROWS=10
+COLS=10
+TEST = INIT_RAND(ROWS, COLS)
+RES = ADJ_MP(TEST)
+PRINT*,"WRITING A RANDOM COMPLEX MATRIX AND ITS ADJOINT..."
+OPEN(42,FILE="TEST.TXT",STATUS="REPLACE",ACTION="WRITE")
+CALL WRITE_MP(42,TEST)
+OPEN(24,FILE="TESTADJ.TXT",STATUS="REPLACE",ACTION="WRITE")
+CALL WRITE_MP(24,RES)
+TEST%MTRACE=.TRACE.(TEST)
+RES%MTRACE=.TRACE.(RES)
+PRINT*,"THE TRACE FOR THE TEST MATRIX IS: ", TEST%MTRACE
+PRINT*,"THE TRACE FOR THE ADJOINT TEST MATRIX IS: ", RES%MTRACE
+CLOSE(42)
+CLOSE(24)
+ROWS=3
+COLS=3
+ALLOCATE(X(ROWS,COLS))
+DO II=1,ROWS
+	DO JJ=1,COLS
+		X(II,JJ)=II+JJ
+	END DO
+END DO
+CALL LU_DCM(X,ROWS,LM,UM)
+print*,um
+END PROGRAM
