@@ -1,0 +1,30 @@
+function BLOCKMULF(a,b,N,BSZ)result(c)
+	integer*4  :: N, BSZ
+	real*4, dimension(:,:) :: a, b
+	real*4, dimension(:,:), allocatable :: c
+	integer*4 :: bi,bj,bk
+	real*4 :: temp
+	if(((N>0).AND.(BSZ>0)).AND.(mod(N,BSZ)==0))then
+! BNUM is the number of blocks per row we need to multiply
+		allocate(c(N,N))
+		c = 0E0
+		do bj=1,N,BSZ
+			do bk=1,N,BSZ
+				do bi=1,N,BSZ
+! actual multiplication
+! we map bi,bj,bk to the actual indices
+					do jj=0,BSZ-1
+						do kk=0,BSZ-1
+						temp = b(bk+kk,bj+jj)
+							do ii=0,BSZ-1
+								c(bi+ii,bj+jj)=c(bi+ii,bj+jj)+a(bi+ii,bk+kk)*temp
+							end do
+						end do
+					end do
+				end do
+			end do
+		end do
+	else
+		allocate(c(0,0))
+	end if
+end function
