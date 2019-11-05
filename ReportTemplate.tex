@@ -3,15 +3,43 @@
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{fancyhdr}
- \usepackage{xcolor}
- \usepackage{lmodern}
- \usepackage{listings}
- \lstset{language=[90]Fortran,
- 	basicstyle=\ttfamily,
- 	keywordstyle=\color{blue},
- 	commentstyle=\color{green},
- 	morecomment=[l]{!\ }% Comment only with space after !
- }
+\usepackage{xcolor}
+\usepackage{lmodern}
+\usepackage{listings}
+
+\usepackage{graphicx}
+\lstset{language=[90]Fortran,
+	basicstyle=\ttfamily,
+	keywordstyle=\color{blue},
+	commentstyle=\color{green},
+	morecomment=[l]{!\ }% Comment only with space after !
+}
+
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+% Default fixed font does not support bold face
+\DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{10} % for bold
+\DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{10}  % for normal
+
+% Python style for highlighting
+\lstset{
+	language=Python,
+	basicstyle=\ttm,
+	otherkeywords={self},             % Add keywords here
+	keywordstyle=\ttb\color{deepblue},
+	emph={__init__},          % Custom highlighting
+	emphstyle=\ttb\color{deepred},    % Custom highlighting style
+	stringstyle=\color{deepgreen},
+	frame=tb,                         % Any extra options here
+	showstringspaces=false            % 
+}
+
+
+
+
 
 \pagestyle{fancy}
 \fancyhf{}
