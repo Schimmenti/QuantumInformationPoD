@@ -27,11 +27,11 @@ end module
 
 program eigenproblem
 use heutil
-
-integer*4 nn, stat,info
+integer*4 ii,nn, stat,info,lwork
 character(10) :: nnchar
 complex*8, dimension(:,:), allocatable :: hem
-real*4, dimension(:), allocatable :: evs,work,rwork
+complex*8, dimension(:), allocatable :: work
+real*4, dimension(:), allocatable :: evs,rwork
 if(COMMAND_ARGUMENT_COUNT() < 1)then
 	nn = 100
 else
@@ -43,7 +43,13 @@ else
 	end if
 	
 endif
+
+lwork=-1
 allocate(evs(nn))
+allocate(work(max(1,lwork)))
+allocate(rwork(max(1, 3*nn-2)))
 hem = rnd_hem(nn)
-call cheev(JOBZ='N',UPLO='U',N=nn,A=hem,LDA=nn,W=evs,WORK=work,LWORK=-1,RWORK=rwork,INFO=0)
+call cheev('N','U',nn,hem,nn,evs,work,lwork,rwork,info)
+print*,"Procedure finished with:",info
+print*,"First 10 Eigenvalues:",evs
 end program
