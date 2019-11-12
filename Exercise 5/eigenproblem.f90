@@ -1,6 +1,7 @@
 module heutil
 implicit none
 contains
+! create a pair of standard gaussian distributed real
 function box_muller_r4(u,v)result(z)
 	real*4 :: u,v
 	real*4, dimension(2) :: z
@@ -11,6 +12,7 @@ function box_muller_r4(u,v)result(z)
 	z(1)=rad*c
 	z(2)=rad*s
 end function
+! create a complex with real and imaginary part normally distributed
 function box_muller_c8(u,v)result(c)
 	real*4 :: u,v
 	real*4, dimension(2) :: z
@@ -18,6 +20,7 @@ function box_muller_c8(u,v)result(c)
 	z = box_muller_r4(u,v)
 	c= complex(z(1),z(2))
 end function
+! creates a random hermitian matrix with normal entries
 function rnd_hem(mSize)result(hem)
 	integer*4 :: mSize
 	integer*4 :: ii,jj, sz
@@ -30,15 +33,34 @@ function rnd_hem(mSize)result(hem)
 	end if
 	allocate(hem(sz,sz))
 	do jj=1,sz
-		do ii=1,jj-1
-		hem(ii,jj)=box_muller_c8(RAND(0),RAND(0))
-		hem(jj,ii)=conjg(hem(ii,jj))
-		end do
 		temp = box_muller_r4(RAND(0),RAND(0))
 		hem(jj,jj)=complex(temp(1),0)
-		
+		do ii=1,jj-1
+			hem(ii,jj)=box_muller_c8(RAND(0),RAND(0))
+			hem(jj,ii)=conjg(hem(ii,jj))
+		end do
 	end do
 end function
+! creates a random diagonal hermitian matrix with normal entries
+function rnd_hem_diag(mSize)result(hem)
+	integer*4 :: mSize
+	integer*4 :: ii,jj, sz
+	complex*8, dimension(:,:), allocatable :: hem
+	real*4, dimension(2) :: temp
+	if(mSize <= 0)then
+		sz = 0
+	else
+		sz = mSize
+	end if
+	allocate(hem(sz,sz))
+	hem = complex(0.0,0.0)
+	do jj=1,sz
+		temp = box_muller_r4(RAND(0),RAND(0))
+		hem(jj,jj)=complex(temp(1),0)
+	end do
+end function
+
+! froma sorted array creates an histogram
 function sorted_hist(oArray,aSize,nBins,left,right,h)result(counts)
 	real*4, dimension(:) :: oArray
 	real*4, intent(in) :: left,right
@@ -70,7 +92,6 @@ function sorted_hist(oArray,aSize,nBins,left,right,h)result(counts)
 		end do
 	end do
 end function
-
 
 subroutine sort_merge(arr,left,center,right)
 	real*4, dimension(:), intent(inout) :: arr
@@ -129,13 +150,14 @@ recursive subroutine sort_split(arr,left,right)
 	end if
 end subroutine
 
-
+! in place array ordering
 subroutine mergesort(arr,sz)
 	real*4, dimension(:), intent(inout) :: arr
 	integer*4, intent(in) :: sz
 	call sort_split(arr,1,sz)
 end subroutine
 
+! hermitian matrix diagonalization
 subroutine hediagonalize(matr,nn,eigvs,info)
 	complex*8, dimension(:,:), intent(inout) :: matr
 	integer*4,intent(out) :: info
@@ -171,19 +193,52 @@ character(len=20) function str(k)
     str = adjustl(str)
 end function str
 
+! computes a local mean
+! the mean at position i is given by the mean from i-steps to i+steps
+function localmean(x, sz,steps)result(xm)
+	real*4, dimension(:) :: x
+	integer*4 :: sz, steps
+	real*4, dimension(:), allocatable :: xm
+	integer*4 :: ii,jj,ll,rl
+	allocate(xm(sz))
+	do ii=1,sz
+		ll = max(1,ii-steps)
+		rl = min(sz,ii+steps)
+		xm(ii)=sum(x(ll:rl))/(rl-ll+1)
+	end do
+end function
+
+function nn_minmax_ratio(x, sz)result(r)
+	real*4, dimension(:),intent(in) :: x
+	integer*4, intent(in) :: sz
+	integer*4 :: ii
+	real*4, dimension(:), allocatable :: r
+	allocate(r(sz-1))
+	do ii=2,sz
+		r(ii-1)=min(x(ii), x(ii-1))/max(x(ii),x(ii-1))
+	end do
+end function
 
 end module
 
 program eigenproblem
 use heutil
-integer*4 ii,rr,nn,reps,nBins, stat,info
+integer*4 ii,rr,nn,reps,nBins, stat,info,mode, avgMode
 character(10) :: nnchar
 complex*8, dimension(:,:), allocatable :: hem
-real*4, dimension(:), allocatable :: evs,sp
+real*4, dimension(:), allocatable :: evs,sp,ratios, lAvgs
 real*4 :: avgSp,binWidth,cutoff
 integer*4, dimension(:), allocatable :: counts
+character(:), allocatable :: fname, fname2
+cutoff=3.5
 
-cutoff=3.0
+! CMD ARGS ARE:
+! MATRIX SIZE
+! NUMBER OF MATRICES TO GENERATE
+! NUMBER OF BINS
+! MODE (HERMITIAN==0, HERMITIAN DIAGONAL)
+! LOCAL==0, GLOBAL==1
+
 if(COMMAND_ARGUMENT_COUNT()  < 1)then
 	nn = 100
 else
@@ -207,25 +262,73 @@ else
 			nBins = 20
 		end if
 	end if	
+
+	if(COMMAND_ARGUMENT_COUNT()>3)then
+		call GET_COMMAND_ARGUMENT(4, nnchar)
+		read(nnchar,FMT=*, IOSTAT=stat)mode
+		if((stat.NE.0).OR.(mode < 0))then
+			mode = 0
+		end if
+	end if	
+
+	if(COMMAND_ARGUMENT_COUNT()>4)then
+		call GET_COMMAND_ARGUMENT(5, nnchar)
+		read(nnchar,FMT=*, IOSTAT=stat)avgMode
+		if((stat.NE.0).OR.(avgMode < 0))then
+			avgMode = 0
+		end if
+	end if	
 endif
-open(unit=42, file="hhist_"//trim(str(nn))//"_"//trim(str(reps))//"_"//trim(str(nBins))//".dat",action="write",status="replace")
+
+
+
+fname = "hh_"//trim(str(nn))//"_"//trim(str(reps))//"_"//trim(str(nBins))//"_"//trim(str(mode))//"_"//trim(str(avgMode))//".dat"
+fname2 = "hr_"//trim(str(nn))//"_"//trim(str(reps))//"_"//trim(str(nBins))//"_"//trim(str(mode))//"_"//trim(str(avgMode))//".dat"
+
+
+
+open(unit=42, file=fname,action="write",status="replace")
+open(unit=420, file=fname2,action="write",status="replace")
 rr=1
 write(42,"(A,G0)")"#cutoff=",cutoff
 do while(rr <=reps)
 	write(*,"(F6.2,A)")(100.0*rr)/reps,"%"
-	hem = rnd_hem(nn)
+	if(mode==0)then
+		hem = rnd_hem(nn)
+	else
+		hem = rnd_hem_diag(nn)
+	end if
 	call hediagonalize(hem,nn,evs,info)
 	
 	if(info==0)then
-!		print*,"Diagonalization completed."
+!		Diagonalization completed.
 		allocate(sp(nn-1))
 
 		do ii=2,nn
 			sp(ii-1)=evs(ii)-evs(ii-1)
 		end do
-		avgSp = sum(sp)/(nn-1)
-		sp = sp/avgSp
-!		print*,"Average spacing is",avgSp
+
+!		Writes the ratios
+		ratios = nn_minmax_ratio(sp, nn-1)
+		lAvgs = localmean(sp, nn-1, int(nn/10.0))
+		do ii=1,nn-3
+			write(420,"(G0)",advance="no")ratios(ii)
+			write(420,"(A)",advance="no")","
+		end do
+		write(420,"(G0)",advance="no")ratios(nn-2)
+		write(420,*)
+
+
+
+		if(avgMode==0)then
+			avgSp = sum(sp)/(nn-1)
+			sp = sp/avgSp
+		else
+			sp = sp/lAvgs
+		end if
+
+		
+!		Writes the histogram
 		call mergesort(sp,nn-1)
 		counts = sorted_hist(sp, nn-1, nBins,0.0,cutoff,binWidth)
 		write(42,"(G0)",advance="no")binWidth
@@ -239,6 +342,13 @@ do while(rr <=reps)
 		write(42,"(I0)",advance="no")counts(nBins)
 		write(42,*)
 		print*,real(sum(counts))/(nn-1)
+
+		
+
+
+
+
+		
 		deallocate(counts)
 		deallocate(hem)
 		deallocate(evs)
@@ -251,4 +361,5 @@ do while(rr <=reps)
 	
 end do
 close(42)
+close(420)
 end program
