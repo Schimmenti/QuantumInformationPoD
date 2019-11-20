@@ -9,6 +9,7 @@
 \usepackage{listings}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{physics}
 \lstset{language=[90]Fortran,
 	basicstyle=\ttfamily,
 	keywordstyle=\color{blue},
@@ -47,15 +48,25 @@
 \lhead{Vincenzo Maria Schimmenti - 1204565}
 \rhead{\today}
 \rfoot{Page \thepage}
-\lfoot{Exercise 0}
+\lfoot{Exercise 7}
 \title{%
 	Information Theory and Computation \\
-	Exercise  0}
+	Exercise  7}
 \author{Vincenzo Maria Schimmenti - 1204565}
 \begin{document}
 \maketitle
  
 \section*{Theory}
+\subsection*{Split operator method}
+Suppose we want to propagate the wavefunction according to some (possibily time dependent) Hamiltonian $H(t)$. For a small time interval the propagator is:
+\begin{equation}
+	U(t+\tau,t) \approx e^{-\frac{i}{\hbar}H(t) \tau}
+\end{equation}
+Since the Hamiltonian is $H=\frac{p^2}{2m}+V(x,t)$ we can use use the BCH formula and split the evolution operator as:
+\begin{equation}
+	e^{-\frac{i}{\hbar}\hat{H}(t) \tau} = e^{-\frac{i}{\hbar}\frac{\hat{V}(x,t)}{2} \tau} e^{-\frac{i}{\hbar} \frac{\hat{p}^2}{2m} \tau}  e^{-\frac{i}{\hbar}\frac{\hat{V}(x,t)}{2} \tau} +o(\tau^2)
+\end{equation}
+Now if we have the wavefunction at time $t$, $\ket{\psi(x,t)}$ and we want to apply the evolution operator we may proceed in the following way: we apply first, in space representation, the operator $e^{-\frac{i}{\hbar}\frac{\hat{V}(x,t)}{2} \tau}$; then, by means of Fourier Transform, we represent the result in momentum space, which makes $e^{-\frac{i}{\hbar} \frac{\hat{p}^2}{2m} \tau}$ diagonal. After applying it, we go back to space representation and we apply the last operator. 
 \section*{Code Development}
 \section*{Results}
 \section*{Self Evaluation}
