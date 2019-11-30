@@ -36,7 +36,6 @@ subroutine propagate_hov_shifted(psi,grd,tau,hbar,m,omega,t,Tmax)
 	x_sh = grd%xmin-t/Tmax
 	do idx=1,grd%sz
 		psi(idx)=psi(idx)*exp(factor*x_sh**2)
-		x_sh = x_sh + grd%a
 	end do
 end subroutine
 
@@ -55,22 +54,26 @@ function propogate_wf_hov_shifted(psi0,grd,tGrd,hbar,m,omega,Tmax)result(psi)
 ! since fortran is column major better to fill the matrix column by column
 	allocate(psi(grd%sz, tGrd%sz))
 	allocate(temp(grd%sz))
-	factor = complex(0,-2*hbar*tGrd%a*(acos(-1.0)**2)/(m*(grd%a*grd%sz)**2))
+	factor = complex(0, -0.5*tGrd%a*4*acos(-1.0)/(hbar*m*(grd%a*grd%sz)**2))
 	psi(:,1)=psi0
 
 	call dfftw_plan_dft_1d(planf,grd%sz,temp,temp,FFTW_FORWARD,FFTW_ESTIMATE);
 	call dfftw_plan_dft_1d(planb,grd%sz,temp,temp,FFTW_BACKWARD,FFTW_ESTIMATE);
 	
 	temp = psi0
-	t = tGrd%a
+	t = 0.0
 	do idx=2, tGrd%sz
 ! potential part, first half
 		call propagate_hov_shifted(temp,grd,tGrd%a/2,hbar,m,omega,t,Tmax)
 ! momentum space
 		call dfftw_execute_dft(planf,temp,temp)
 ! multiply by kinetic term
-		do jdx=1,grd%sz
+		do jdx=1,grd%sz/2
 			temp(jdx)=temp(jdx)*exp(factor*jdx*jdx)
+		end do
+
+		do jdx=1+grd%sz/2, grd%sz
+			temp(jdx)=temp(jdx)*exp(factor*(grd%sz-jdx)**2)
 		end do
 ! position space	
 		call dfftw_execute_dft(planb, temp, temp)
@@ -102,14 +105,14 @@ function ho_groundstate(grd, hbar, m, omega)result(psi)
 end function
 
 subroutine herm_diag(matr,nn,eigvs,job,info)
-	complex*8, dimension(:,:), intent(inout) :: matr
+	complex*16, dimension(:,:), intent(inout) :: matr
 	integer*4,intent(out) :: info
 	integer*4,intent(in) :: nn
 	character*1, intent(inout) :: job
 	integer*4 :: lwork
-	real*4, dimension(:),allocatable,intent(inout) :: eigvs
-	complex*8, dimension(:), allocatable :: work
-	real*4, dimension(:), allocatable :: rwork
+	real*8, dimension(:),allocatable,intent(inout) :: eigvs
+	complex*16, dimension(:), allocatable :: work
+	real*8, dimension(:), allocatable :: rwork
 	! optimal lwork
 	lwork=-1
 	allocate(work(1))
@@ -118,7 +121,7 @@ subroutine herm_diag(matr,nn,eigvs,job,info)
 	if((job /= 'N').OR.(job /= 'V'))then
 		job = 'N'
 	end if
-	call cheev('V','U',nn,matr,nn,eigvs,work,lwork,rwork,info)
+	call zheev('V','U',nn,matr,nn,eigvs,work,lwork,rwork,info)
 	lwork = int(real(work(1)))
 	deallocate(work)
 	deallocate(rwork)
@@ -127,14 +130,14 @@ subroutine herm_diag(matr,nn,eigvs,job,info)
 	! actual diag
 	allocate(work(max(1,lwork)))
 	allocate(rwork(max(1, 3*nn-2)))
-	call cheev('V','U',nn,matr,nn,eigvs,work,lwork,rwork,info)
+	call zheev('V','U',nn,matr,nn,eigvs,work,lwork,rwork,info)
 
 	deallocate(work)
 	deallocate(rwork)
 end subroutine
 
 subroutine write_vec_col(x,sz,fileUnit)
-	real*4, dimension(:) :: x
+	real*8, dimension(:) :: x
 	integer*4 :: sz, fileUnit
 	integer*4 :: ii
 	do ii=1,sz
@@ -143,7 +146,7 @@ subroutine write_vec_col(x,sz,fileUnit)
 end subroutine
 
 subroutine write_complex_vec_col(x,sz,fileUnit)
-	complex*8, dimension(:) :: x
+	complex*16, dimension(:) :: x
 	integer*4 :: sz, fileUnit
 	integer*4 :: ii
 	do ii=1,sz
@@ -151,8 +154,8 @@ subroutine write_complex_vec_col(x,sz,fileUnit)
 	end do
 end subroutine
 
-subroutine wrm_r4(x, nRows, nCols, fileUnit)
-	real*4, dimension(:,:), intent(in) :: x
+subroutine wrm_r8(x, nRows, nCols, fileUnit)
+	real*8, dimension(:,:), intent(in) :: x
 	integer*4, intent(in) :: nRows, nCols, fileUnit
 	integer*4 :: ii,jj
 	do ii=1, nRows
@@ -163,8 +166,8 @@ subroutine wrm_r4(x, nRows, nCols, fileUnit)
 	end do
 end subroutine
 
-subroutine wrm_c8(x, nRows, nCols, fileUnit)
-	complex*8, dimension(:,:), intent(in) :: x
+subroutine wrm_c16(x, nRows, nCols, fileUnit)
+	complex*16, dimension(:,:), intent(in) :: x
 	integer*4, intent(in) :: nRows, nCols, fileUnit
 	integer*4 :: ii,jj
 	do ii=1, nRows
@@ -177,10 +180,10 @@ end subroutine
 
 
 function shift_difference(x,sz)result(s)
- 	real*4, dimension(:) :: x
+ 	real*8, dimension(:) :: x
 	integer*4 :: sz, shift
 
-	real*4, dimension(:), allocatable :: s
+	real*8, dimension(:), allocatable :: s
 	integer*4 :: ii
 
 	allocate(s(sz))
