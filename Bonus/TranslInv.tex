@@ -1,0 +1,79 @@
+
+% !TeX spellcheck = en_US
+\documentclass{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{lmodern}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{physics}
+\lstset{language=[90]Fortran,
+	basicstyle=\ttfamily,
+	keywordstyle=\color{blue},
+	commentstyle=\color{green},
+	morecomment=[l]{!\ }% Comment only with space after !
+}
+
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+% Default fixed font does not support bold face
+\DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{10} % for bold
+\DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{10}  % for normal
+
+% Python style for highlighting
+\lstset{
+	language=Python,
+	basicstyle=\ttm,
+	otherkeywords={self},             % Add keywords here
+	keywordstyle=\ttb\color{deepblue},
+	emph={__init__},          % Custom highlighting
+	emphstyle=\ttb\color{deepred},    % Custom highlighting style
+	stringstyle=\color{deepgreen},
+	frame=tb,                         % Any extra options here
+	showstringspaces=false            % 
+}
+
+
+
+
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Vincenzo Maria Schimmenti - 1204565}
+\rhead{\today}
+\rfoot{Page \thepage}
+\lfoot{Exercise 9bis}
+\title{%
+	Information Theory and Computation \\
+	Exercise  9bis}
+\author{Vincenzo Maria Schimmenti - 1204565}
+\begin{document}
+\maketitle
+ 
+\section*{Translational invariant states}
+Take the translational operator $T=\sum_{i=1}^N \sigma_x^i \sigma_x^{i+1}$ (using periodic boundary conditions). Suppose we want to diagonalize this operator: we need to build $2^N$ states that are traslational invariant. Suppose we find an ensemble of $M$ states $\{ t_i \}$ for which
+\begin{equation}
+	T t_i = t_{i+1}
+\end{equation}
+then  any Fourier like combination is traslational invariant:
+\begin{equation}
+	T v_p = T \sum_{q=1}^M e^{2\pi i \frac{pq}{M}} t_q = \sum_{q=1}^M e^{2\pi i \frac{pq}{M}} t_{q+1} = e^{-2\pi i \frac{p}{M}} v_p
+\end{equation}
+We have to build $2^N$ of these states and we have to do it in a way that exploits the above property. Let's start from the trivial state which is $\ket{0 \dots 0}$. Now we proceed by adding one $1$ at the previous state i.e. we use as $\{ t_i \}$ the followings states:
+\begin{equation}
+	\ket{100 \dots 00}, \ket{010 \dots 00}, \ket{001 \dots 00}, \dots, \ket{000 \dots 01}
+\end{equation}
+There exist $N$ states like this and using the Fourier series we can extract $N$ basis vector. In this way we are block-diagonalizing the Hamiltonian. Let's move to the next kind of state by adding another $1$:
+\begin{flalign}
+	& \ket{1100 \dots 00}, \ket{0110 \dots 00}, \ket{0011 \dots 00}, \dots, \ket{000 \dots 11} \\
+	& \ket{10100 \dots 000}, \ket{01010 \dots 000}, \ket{00101 \dots 000}, \dots, \ket{000 \dots 101}, \ket{010 \dots 001} \\
+	& \ket{100100 \dots 000}, \ket{010010 \dots 000}, \ket{001001 \dots 000}, \dots, \ket{100000 \dots 100}, \ket{010000 \dots 010}, \ket{001000 \dots 001}
+\end{flalign}
+\end{document}

@@ -235,21 +235,18 @@ function isingHamiltonian(N,lmbd)result(H)
     integer*4, intent(in) :: N
     real*8, intent(in) :: lmbd
     complex*16, dimension(:,:), allocatable :: H
-    integer*4 :: sz,mm,nn,accum,mask,kk
+    integer*4 :: sz,mm,nn,mask,kk
     sz = 2**N
     allocate(H(sz,sz))
+    H = 0
     do mm=0,sz-1
-        H(mm+1,nn+1)=lmbd*magnetization_integer(mm, N)
-        do nn=0,sz-1
-            accum = 0
-            mask = 3
-            do kk=1,N-1
-                if(xor(nn, mask)==mm)then
-                    accum = accum + 1
-                end if
-                mask = mask*2
-            end do
-            H(mm+1,nn+1)=accum
+        H(mm+1,mm+1)=lmbd*magnetization_integer(mm, N)
+        mask = 3
+        do kk=1,N-1
+            nn = xor(mm,mask)
+            H(mm+1,nn+1)=1
+            H(nn+1,mm+1)=1
+            mask = mask*2
         end do
     end do
 end function
