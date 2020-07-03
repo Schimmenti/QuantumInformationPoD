@@ -1,0 +1,110 @@
+
+% !TeX spellcheck = en_US
+\documentclass{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{lmodern}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{physics}
+\lstset{language=[90]Fortran,
+	basicstyle=\ttfamily,
+	keywordstyle=\color{blue},
+	commentstyle=\color{green},
+	morecomment=[l]{!\ }% Comment only with space after !
+}
+
+\usepackage{color}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+% Default fixed font does not support bold face
+\DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{10} % for bold
+\DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{10}  % for normal
+
+% Python style for highlighting
+\lstset{
+	language=Python,
+	basicstyle=\ttm,
+	otherkeywords={self},             % Add keywords here
+	keywordstyle=\ttb\color{deepblue},
+	emph={__init__},          % Custom highlighting
+	emphstyle=\ttb\color{deepred},    % Custom highlighting style
+	stringstyle=\color{deepgreen},
+	frame=tb,                         % Any extra options here
+	showstringspaces=false            % 
+}
+
+
+
+
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Vincenzo Maria Schimmenti - 1204565}
+\rhead{\today}
+\rfoot{Page \thepage}
+\lfoot{Exercise 10}
+\title{%
+	Information Theory and Computation \\
+	Exercise  10}
+\author{Vincenzo Maria Schimmenti - 1204565}
+\begin{document}
+\maketitle
+ 
+\section*{Theory}
+\subsection*{Real Space Renormalization Group}
+The Real Space Renormalization Group procedure for the Ising chain in a transverse field starts from an Hamiltonian of $N$ spins which we will take equals to:
+\begin{equation*}
+	H_N = \lambda \sum_{i=1}^N \sigma^z_i + \sum_{i=1}^{N-1} \sigma^x_i \sigma^x_{i+1}
+\end{equation*}
+At each iteration of the algorithm we want to double the number of spins represented keeping the same dimensionality of the Hamiltonian ($2^N \times 2^N$). At each iteration we have an Hamiltonian $\tilde{H}_N$ (which is, at the first step, the original Hamiltonian) and the interaction Hamiltonians (living in n Hilbert space relative to $N/2$ spins) $H_L$ and $H_R$ for the left sites and right sites of the system; at first we have $H_L=\mathbb{I} \otimes \dots \otimes \mathbb{I} \otimes \sigma^x_{N/2}$ and $H_R=\sigma^x_{N/2+1} \otimes \mathbb{I} \otimes \dots \otimes \mathbb{I}$. Given the initial conditions the procedure goes as follows:
+\begin{itemize}
+	\item Diagonalize  $\tilde{H}_N$ obtaining the projection matrix $P$\
+	\item Project  $\tilde{H}_N$ using a reduced version of $P$, $P'$, relative only to the first $2^{N/2}$ eigenvector hence obtaining a new Hamiltonian  $\tilde{H}'_{N/2}$ representing $N$ spins in a $N/2$ spins effective Hamiltonian.
+	\item We restore our previous dimensionality by sticking together two equal $\tilde{H}'_{N/2}$. The interaction $\tilde{H}_{int}$ between the two is obtained by first updating $H_L$ and $H_R$ using the same projector $H_L \leftarrow P'^\dagger H_L P'$ and $H_R \leftarrow P'^\dagger H_R P'$ and second defining $\tilde{H}_{int}=H_L \otimes H_R$
+	\item The Hamiltonian $\tilde{H}_N$ is updated by $\tilde{H}'_{N/2} \otimes \mathbb{I}^{N/2}+ \mathbb{I}^{N/2} \otimes \tilde{H}'_{N/2} + \tilde{H}_{int}$
+\end{itemize}
+Since at each iteration we double the number of spins represented hence at the end, if we made $N_{itr}$ iterations, we would have $2^{N_{itr}} N$ spins. The ground state energy density of the system is obtained by diving the smallest eigenvalue of the final $\tilde{H}_N$ by $2^{N_{itr} } N$.
+\section*{Code Development}
+The following code block applies the RSRG procedure on a $N$ dimensional Hamiltonian $H$. The functions \textit{applyIdentitiesLeft} and \textit{applyIdentitiesRight} applies a tensor product of a certain number of identity matrices eitehr on the left or on the right of the given matrix. The function \textit{applyProjection(A,P)} returns the matrix $A'=P^\dagger A P$. The final Hamiltonian is found in the variable $H_{new}$.
+\begin{lstlisting}[language=Fortran]
+NHalf = N/2
+sz = 2**N
+szHalf = 2**NHalf
+allocate(P(sz,sz))
+allocate(Hnew(sz,sz))
+P=H
+Hnew=H
+HL=applyIdentitiesLeft(sX, 2, NHalf-1)
+HR=applyIdentitiesRight(sX, 2, NHalf-1)
+do iter = 1, Niters
+	call herm_diag(P,sz,eigs,'V',info)
+	deallocate(eigs)
+	Ht = applyProjection(Hnew,P(1:sz, 1:szHalf))
+	HL = applyIdentitiesLeft(HL, 2, NHalf)
+	HR = applyIdentitiesRight(HR, 2, NHalf)
+	HL = applyProjection(HL,P(1:sz, 1:szHalf))
+	HR = applyProjection(HR,P(1:sz, 1:szHalf))
+	P = applyIdentitiesRight(Ht,2,NHalf) + applyIdentitiesLeft(Ht,2,NHalf)
+	P = P + tensor_product(HL,HR, szHalf, szHalf)
+	Hnew=P
+end do
+\end{lstlisting}
+\newpage
+\section*{Results}
+Below we show the resulting ground state energy as a function of $\lambda$. We used $N=4$ states as a starting point and $N_{itr}=1000$ iterations. 
+\begin{figure}[h]
+	\includegraphics*[width=\linewidth]{gstate.png}
+\end{figure}
+\newline
+For $\lambda=0$ one expects a theoretical value of $-1$ and the obtained one (using double precision arithmetic) is $-1.0000000000005036$. This very small error is also obtained using a smaller number of iterations.
+
+\section*{Final considerations}
+Such implementation of the RSRG algorithm was really simplified by the use of auxiliary functions which took care of the annoying parts of the code allowing the code to show only the mathematical operations performed.
+\end{document}

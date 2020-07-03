@@ -1,0 +1,2 @@
+-heseinberg_sector.py is a Python script dealing with the whole analysis process. Some boolean variables deal with the kind of task desiderd. At the end of the computation a 'summary' file is saved and its results can be recovered later.
+-main.f03 and heisenberg.f03 are respectively a FORTRAN program and module to analyze the Heisenberg Chain via the sector approach (as above). The output is 'hesinberg_results.txt' and contains columns with (system_size, field_strength, f, r, dm) <- as defined in the report
